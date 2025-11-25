@@ -5,6 +5,7 @@ import CVInput from './components/CVInput';
 import AnalysisDashboard from './components/AnalysisDashboard';
 import JobCard from './components/JobCard';
 import JobAlertsModal from './components/JobAlertsModal';
+import OnboardingTour from './components/OnboardingTour';
 import { Rocket, Sparkles, AlertTriangle, RefreshCcw, ArrowLeft, BellRing, CheckCircle } from 'lucide-react';
 
 const App: React.FC = () => {
@@ -102,6 +103,8 @@ const App: React.FC = () => {
     <div className="min-h-screen relative overflow-x-hidden bg-[url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072&auto=format&fit=crop')] bg-cover bg-fixed bg-center">
       {/* Dark Overlay */}
       <div className="absolute inset-0 bg-slate-950/90 backdrop-blur-[2px]"></div>
+      
+      <OnboardingTour />
 
       <div className="relative z-10 container mx-auto px-4 py-8 min-h-screen flex flex-col">
         

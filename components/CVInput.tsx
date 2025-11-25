@@ -180,7 +180,7 @@ const CVInput: React.FC<Props> = ({
 
             <div className="space-y-4">
               {/* Country Input */}
-              <div className="relative group">
+              <div className="relative group tour-country-select">
                 <div className="flex gap-2">
                   <div className="relative flex-grow">
                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -213,7 +213,7 @@ const CVInput: React.FC<Props> = ({
               </div>
 
               {/* CV Textarea */}
-              <div className="relative group">
+              <div className="relative group tour-cv-input">
                 <textarea
                   value={text}
                   onChange={(e) => onTextChange(e.target.value)}
@@ -278,7 +278,7 @@ const CVInput: React.FC<Props> = ({
             <button
               type="submit"
               disabled={!text.trim() || isLoading || isPdfProcessing}
-              className={`w-full flex items-center justify-center gap-2 py-4 rounded-xl font-bold text-white transition-all
+              className={`w-full flex items-center justify-center gap-2 py-4 rounded-xl font-bold text-white transition-all tour-analyze-btn
                 ${!text.trim() || isLoading || isPdfProcessing
                   ? 'bg-slate-800 cursor-not-allowed text-slate-500' 
                   : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:shadow-[0_0_20px_rgba(99,102,241,0.5)] hover:scale-[1.01]'

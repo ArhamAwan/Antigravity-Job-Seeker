@@ -13,9 +13,11 @@
     "@google/genai": "^1.30.0",
     "@supabase/supabase-js": "^2.84.0",
     "lucide-react": "^0.554.0",
+    "object-assign": "^4.1.1",
     "pdfjs-dist": "3.11.174",
     "react": "^19.2.0",
-    "react-dom": "^19.2.0"
+    "react-dom": "^19.2.0",
+    "react-joyride": "^2.9.3"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
