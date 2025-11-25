@@ -25,6 +25,7 @@ const App: React.FC = () => {
   const [cvText, setCvText] = useState('');
   const [cvImage, setCvImage] = useState<{ mimeType: string, data: string } | null>(null);
   const [country, setCountry] = useState<string>('United States');
+  const [selectedRole, setSelectedRole] = useState<string | null>(null);
 
   // Load alert state from local storage on mount
   useEffect(() => {
@@ -57,8 +58,10 @@ const App: React.FC = () => {
     if (!analysis) return;
     setPhase(AppPhase.SEARCHING);
     setError(null);
+    const roleToSearch = specificRole || analysis.suggestedRoles[0];
+    setSelectedRole(roleToSearch);
     try {
-      const results = await searchOpportunities(analysis, country, specificRole);
+      const results = await searchOpportunities(analysis, country, roleToSearch);
       setOpportunities(results);
       setPhase(AppPhase.RESULTS);
     } catch (err) {
@@ -116,6 +119,7 @@ const App: React.FC = () => {
     setCvImage(null);
     setPrepJob(null);
     setCoverLetterJob(null);
+    setSelectedRole(null);
   };
 
   return (
@@ -226,7 +230,7 @@ const App: React.FC = () => {
                  <div>
                    <h2 className="text-3xl font-display font-bold text-white">Opportunities Detected</h2>
                    <p className="text-slate-400 mt-1">
-                     Highest probability matches found for <span className="text-indigo-400 font-semibold">{analysis?.suggestedRoles[0]}</span> in <span className="text-indigo-400 font-semibold">{country}</span>
+                     Highest probability matches found for <span className="text-indigo-400 font-semibold">{selectedRole || analysis?.suggestedRoles[0]}</span> in <span className="text-indigo-400 font-semibold">{country}</span>
                    </p>
                  </div>
                  <div className="flex gap-3">
@@ -282,7 +286,7 @@ const App: React.FC = () => {
         <JobAlertsModal 
           isOpen={isAlertModalOpen} 
           onClose={() => setIsAlertModalOpen(false)}
-          role={analysis?.suggestedRoles[0] || 'your profile'}
+          role={selectedRole || analysis?.suggestedRoles[0] || 'your profile'}
           country={country}
           onSubscribe={handleSubscribe}
         />
