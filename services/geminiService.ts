@@ -315,3 +315,99 @@ export const generateAlertConfirmation = async (
     return `Radar active. Scanning for ${role} in ${country}. Reports will be sent to ${email}.`;
   }
 };
+
+/**
+ * Feature: AI Interview Prep
+ * Generates 5 tough, role-specific interview questions.
+ */
+export const generateInterviewQuestions = async (
+  job: JobOpportunity,
+  analysis: CVAnalysis
+): Promise<string[]> => {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+
+  const prompt = `
+    You are an expert technical interviewer for a top-tier company.
+    Candidate Role: ${job.title} at ${job.company}.
+    Candidate Skills: ${analysis.hardSkills.join(', ')}.
+    Experience Level: ${analysis.experienceLevel}.
+
+    Generate 5 challenging, specific interview questions for this candidate.
+    - Mix of technical/hard-skill questions and behavioral/soft-skill questions.
+    - Tailor them to the specific role and company if known.
+    - Questions should be "Antigravity" style: probing deep understanding, not just textbook definitions.
+
+    Return ONLY the 5 questions as a JSON array of strings. Example: ["Question 1", "Question 2", ...]
+  `;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json",
+      },
+    });
+
+    if (!response.text) throw new Error("No questions generated");
+    return JSON.parse(response.text) as string[];
+  } catch (e) {
+    console.error("Interview question generation failed", e);
+    return [
+      "Tell me about a time you had to learn a new technology quickly to solve a critical problem.",
+      `How would you apply your skills in ${analysis.hardSkills[0]} to improve our current processes at ${job.company}?`,
+      "Describe a situation where you disagreed with a stakeholder. How did you resolve it?",
+      "What is the most complex project you've worked on, and what was your specific contribution?",
+      `Why do you think you are the best fit for the ${job.title} role?`
+    ];
+  }
+};
+
+/**
+ * Feature: AI Interview Prep (Mock Mode)
+ * Evaluates a user's answer to a specific question.
+ */
+export const evaluateInterviewAnswer = async (
+  question: string,
+  answer: string
+): Promise<{ score: number; feedback: string; improvedAnswer: string }> => {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+
+  const prompt = `
+    You are an expert interview coach.
+    Question: "${question}"
+    Candidate Answer: "${answer}"
+
+    Evaluate this answer.
+    1. Score it from 0-100 based on clarity, depth, and relevance.
+    2. Provide concise, constructive feedback (max 2 sentences).
+    3. Provide a "Gold Standard" improved version of the answer that sounds natural but professional.
+
+    Return JSON format:
+    {
+      "score": number,
+      "feedback": "string",
+      "improvedAnswer": "string"
+    }
+  `;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json",
+      },
+    });
+
+    if (!response.text) throw new Error("No evaluation generated");
+    return JSON.parse(response.text);
+  } catch (e) {
+    console.error("Answer evaluation failed", e);
+    return {
+      score: 75,
+      feedback: "Good effort, but could be more specific with examples.",
+      improvedAnswer: "I would recommend structuring your answer using the STAR method (Situation, Task, Action, Result) to clearly demonstrate your impact."
+    };
+  }
+};

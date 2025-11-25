@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
 import { JobOpportunity, CVAnalysis } from '../types';
-import { ArrowUpRight, Building2, BrainCircuit, AlertCircle, MessageSquare, Copy, Check, Loader2 } from 'lucide-react';
+import { ArrowUpRight, Building2, BrainCircuit, AlertCircle, MessageSquare, Copy, Check, Loader2, Mic } from 'lucide-react';
 import { generateOutreach } from '../services/geminiService';
 
 interface Props {
   job: JobOpportunity;
   analysis?: CVAnalysis | null; // Optional to support passing analysis context
+  onPrepMe?: (job: JobOpportunity) => void;
 }
 
-const JobCard: React.FC<Props> = ({ job, analysis }) => {
+const JobCard: React.FC<Props> = ({ job, analysis, onPrepMe }) => {
   const [outreach, setOutreach] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -99,27 +100,37 @@ const JobCard: React.FC<Props> = ({ job, analysis }) => {
            )}
         </div>
 
-        <div className="mt-4 pt-4 border-t border-slate-800 flex gap-3">
-          {analysis && !outreach && (
+        <div className="mt-4 pt-4 border-t border-slate-800 flex flex-col gap-3">
+          <div className="flex gap-3">
+            {analysis && !outreach && (
+              <button
+                onClick={handleGenerateOutreach}
+                disabled={isGenerating}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-indigo-300 hover:text-indigo-200 rounded-lg transition-colors text-sm font-medium border border-slate-700"
+              >
+                {isGenerating ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <MessageSquare className="w-4 h-4" />
+                )}
+                {isGenerating ? 'Drafting...' : 'Draft Outreach'}
+              </button>
+            )}
+
             <button
-              onClick={handleGenerateOutreach}
-              disabled={isGenerating}
+              onClick={() => onPrepMe && onPrepMe(job)}
               className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-indigo-300 hover:text-indigo-200 rounded-lg transition-colors text-sm font-medium border border-slate-700"
             >
-              {isGenerating ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <MessageSquare className="w-4 h-4" />
-              )}
-              {isGenerating ? 'Drafting...' : 'Draft Outreach'}
+              <Mic className="w-4 h-4" />
+              <span>Prep Me</span>
             </button>
-          )}
+          </div>
 
           <a 
             href={job.applicationUrl} 
             target="_blank" 
             rel="noopener noreferrer"
-            className="flex-1 flex items-center justify-center justify-between px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-colors group/btn shadow-[0_0_15px_rgba(79,70,229,0.3)]"
+            className="flex items-center justify-center justify-between px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-colors group/btn shadow-[0_0_15px_rgba(79,70,229,0.3)] w-full"
           >
             <span className="text-sm font-medium">Apply Now</span>
             <ArrowUpRight className="w-4 h-4 transform group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5 transition-transform" />

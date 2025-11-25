@@ -5,6 +5,7 @@ import CVInput from './components/CVInput';
 import AnalysisDashboard from './components/AnalysisDashboard';
 import JobCard from './components/JobCard';
 import JobAlertsModal from './components/JobAlertsModal';
+import InterviewPrepModal from './components/InterviewPrepModal';
 import OnboardingTour from './components/OnboardingTour';
 import { Analytics } from "@vercel/analytics/react";
 import { Rocket, Sparkles, AlertTriangle, RefreshCcw, ArrowLeft, BellRing, CheckCircle } from 'lucide-react';
@@ -16,6 +17,7 @@ const App: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isAlertModalOpen, setIsAlertModalOpen] = useState(false);
   const [alertActive, setAlertActive] = useState(false);
+  const [prepJob, setPrepJob] = useState<JobOpportunity | null>(null);
   
   // Lifted state to support "Back" navigation without data loss
   const [cvText, setCvText] = useState('');
@@ -69,6 +71,10 @@ const App: React.FC = () => {
     localStorage.setItem('antigravity_alert_active', 'true');
   };
 
+  const handlePrepMe = (job: JobOpportunity) => {
+    setPrepJob(job);
+  };
+
   // Handles internal navigation backwards through the phases
   const handleBack = () => {
     setError(null);
@@ -102,6 +108,7 @@ const App: React.FC = () => {
     setCountry('United States');
     setCvText('');
     setCvImage(null);
+    setPrepJob(null);
   };
 
   return (
@@ -239,7 +246,12 @@ const App: React.FC = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {opportunities.map((job) => (
-                  <JobCard key={job.id} job={job} analysis={analysis} />
+                  <JobCard 
+                    key={job.id} 
+                    job={job} 
+                    analysis={analysis}
+                    onPrepMe={handlePrepMe}
+                  />
                 ))}
               </div>
               
@@ -266,6 +278,15 @@ const App: React.FC = () => {
           country={country}
           onSubscribe={handleSubscribe}
         />
+
+        {prepJob && analysis && (
+          <InterviewPrepModal
+            isOpen={!!prepJob}
+            onClose={() => setPrepJob(null)}
+            job={prepJob}
+            analysis={analysis}
+          />
+        )}
       </div>
     </div>
   );
