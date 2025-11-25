@@ -22,6 +22,8 @@ interface Props {
   onCountryChange: (country: string) => void;
   onAnalyze: () => void;
   isLoading: boolean;
+  onImageSelect?: (image: { mimeType: string, data: string } | null) => void;
+  selectedImage?: { mimeType: string, data: string } | null;
 }
 
 const CVInput: React.FC<Props> = ({ 
@@ -30,7 +32,9 @@ const CVInput: React.FC<Props> = ({
   onTextChange, 
   onCountryChange, 
   onAnalyze, 
-  isLoading 
+  isLoading,
+  onImageSelect,
+  selectedImage
 }) => {
   const [isPdfProcessing, setIsPdfProcessing] = useState(false);
   const [isDetectingLocation, setIsDetectingLocation] = useState(false);
@@ -94,7 +98,7 @@ const CVInput: React.FC<Props> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (text.trim()) {
+    if (text.trim() || selectedImage) {
       onAnalyze();
     }
   };
@@ -103,64 +107,89 @@ const CVInput: React.FC<Props> = ({
     try {
       const clipboardText = await navigator.clipboard.readText();
       onTextChange(clipboardText);
+      if (onImageSelect) onImageSelect(null); // Clear image if pasting text
     } catch (err) {
       console.error('Failed to read clipboard', err);
     }
   };
 
-  const handlePdfUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.type !== 'application/pdf') {
-      alert("Please upload a valid PDF file.");
-      return;
+    // Handle Image Uploads (PNG, JPG, JPEG)
+    if (file.type.startsWith('image/')) {
+        if (!onImageSelect) return;
+        
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            const base64String = reader.result as string;
+            // Remove prefix "data:image/png;base64,"
+            const base64Data = base64String.split(',')[1];
+            onImageSelect({ mimeType: file.type, data: base64Data });
+            onTextChange(""); // Clear text if image is selected
+        };
+        reader.readAsDataURL(file);
+        return;
     }
 
-    setIsPdfProcessing(true);
-    try {
-      const arrayBuffer = await file.arrayBuffer();
-      
-      // Use the resolved library instance
-      // Configured with CMaps to ensure correct character rendering/extraction
-      const loadingTask = pdfjsLib.getDocument({ 
-        data: arrayBuffer,
-        cMapUrl: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/cmaps/',
-        cMapPacked: true,
-        isEvalSupported: false
-      });
+    // Handle PDF Uploads
+    if (file.type === 'application/pdf') {
+        if (onImageSelect) onImageSelect(null); // Clear image if PDF is uploaded
+        
+        setIsPdfProcessing(true);
+        try {
+        const arrayBuffer = await file.arrayBuffer();
+        
+        // Use the resolved library instance
+        // Configured with CMaps to ensure correct character rendering/extraction
+        const loadingTask = pdfjsLib.getDocument({ 
+            data: arrayBuffer,
+            cMapUrl: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/cmaps/',
+            cMapPacked: true,
+            isEvalSupported: false
+        });
 
-      const pdf = await loadingTask.promise;
-      
-      let fullText = "";
-      
-      for (let i = 1; i <= pdf.numPages; i++) {
-        const page = await pdf.getPage(i);
-        const textContent = await page.getTextContent();
-        // Extract strings from text items
-        // Filter out empty items to prevent excessive whitespace
-        const pageText = textContent.items
-          .map((item: any) => item.str)
-          .join(' ');
-        fullText += pageText + "\n";
-      }
+        const pdf = await loadingTask.promise;
+        
+        let fullText = "";
+        
+        for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const textContent = await page.getTextContent();
+            // Extract strings from text items
+            // Filter out empty items to prevent excessive whitespace
+            const pageText = textContent.items
+            .map((item: any) => item.str)
+            .join(' ');
+            fullText += pageText + "\n";
+        }
 
-      // Basic cleanup of extracted text (removing excessive whitespace)
-      const cleanText = fullText.replace(/\s+/g, ' ').trim();
-      onTextChange(cleanText);
-    } catch (error) {
-      console.error("PDF Parsing Error", error);
-      alert("Failed to extract text from PDF. It might be encrypted or image-only. Please copy/paste text manually.");
-    } finally {
-      setIsPdfProcessing(false);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = ''; // Reset input
-      }
+        // Basic cleanup of extracted text (removing excessive whitespace)
+        const cleanText = fullText.replace(/\s+/g, ' ').trim();
+        onTextChange(cleanText);
+        } catch (error) {
+        console.error("PDF Parsing Error", error);
+        alert("Failed to extract text from PDF. It might be encrypted or image-only. Please copy/paste text manually.");
+        } finally {
+        setIsPdfProcessing(false);
+        if (fileInputRef.current) {
+            fileInputRef.current.value = ''; // Reset input
+        }
+        }
+        return;
     }
+
+    alert("Please upload a valid PDF or Image file.");
   };
 
   const triggerFileUpload = () => {
     fileInputRef.current?.click();
+  };
+
+  const clearImage = () => {
+      if (onImageSelect) onImageSelect(null);
+      if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   return (
@@ -175,7 +204,7 @@ const CVInput: React.FC<Props> = ({
           <div className="relative z-10 space-y-6">
             <div className="text-center space-y-2">
               <h2 className="text-2xl font-display font-bold text-white">Upload Your Trajectory</h2>
-              <p className="text-slate-400 text-sm">Paste your raw CV text or upload a PDF. We'll handle the gravity.</p>
+              <p className="text-slate-400 text-sm">Paste your raw CV text, upload a PDF, or drop an image. We'll handle the gravity.</p>
             </div>
 
             <div className="space-y-4">
@@ -212,27 +241,52 @@ const CVInput: React.FC<Props> = ({
                 </div>
               </div>
 
-              {/* CV Textarea */}
+              {/* CV Input Area (Text or Image) */}
               <div className="relative group tour-cv-input">
-                <textarea
-                  value={text}
-                  onChange={(e) => onTextChange(e.target.value)}
-                  placeholder={isPdfProcessing ? "Extracting text from PDF..." : "Paste your resume content here..."}
-                  disabled={isPdfProcessing}
-                  className="w-full h-48 bg-slate-950 border border-slate-800 rounded-xl p-4 text-sm text-slate-300 placeholder-slate-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all resize-none font-mono disabled:opacity-50"
-                />
+                
+                {selectedImage ? (
+                    // Image Preview Mode
+                    <div className="w-full h-48 bg-slate-950 border border-indigo-500/50 rounded-xl p-2 relative flex items-center justify-center overflow-hidden">
+                        <img 
+                            src={`data:${selectedImage.mimeType};base64,${selectedImage.data}`} 
+                            alt="CV Preview" 
+                            className="max-h-full max-w-full object-contain rounded-lg opacity-80"
+                        />
+                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                            <button 
+                                type="button"
+                                onClick={clearImage}
+                                className="px-4 py-2 bg-red-500/80 hover:bg-red-600 text-white rounded-lg text-sm font-medium backdrop-blur-sm transition-colors"
+                            >
+                                Remove Image
+                            </button>
+                        </div>
+                        <div className="absolute top-2 right-2 bg-indigo-600 text-white text-xs px-2 py-1 rounded-full shadow-lg">
+                            Image Mode Active
+                        </div>
+                    </div>
+                ) : (
+                    // Text Area Mode
+                    <textarea
+                    value={text}
+                    onChange={(e) => onTextChange(e.target.value)}
+                    placeholder={isPdfProcessing ? "Extracting text from PDF..." : "Paste your resume content here..."}
+                    disabled={isPdfProcessing}
+                    className="w-full h-48 bg-slate-950 border border-slate-800 rounded-xl p-4 text-sm text-slate-300 placeholder-slate-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all resize-none font-mono disabled:opacity-50"
+                    />
+                )}
                 
                 {/* Hidden File Input */}
                 <input 
                   type="file" 
                   ref={fileInputRef} 
-                  accept="application/pdf" 
+                  accept="application/pdf,image/png,image/jpeg,image/jpg" 
                   className="hidden" 
-                  onChange={handlePdfUpload}
+                  onChange={handleFileUpload}
                 />
 
                 {/* Overlay Buttons (Show when empty) */}
-                {!text && !isPdfProcessing && (
+                {!text && !selectedImage && !isPdfProcessing && (
                   <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex gap-3 w-full justify-center px-4">
                     <button
                       type="button"
@@ -248,7 +302,7 @@ const CVInput: React.FC<Props> = ({
                       className="flex items-center gap-2 px-4 py-2 bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-200 border border-indigo-500/30 rounded-lg text-sm transition-colors backdrop-blur-sm"
                     >
                       <FileUp className="w-4 h-4" />
-                      Upload PDF
+                      Upload File
                     </button>
                   </div>
                 )}
@@ -267,7 +321,7 @@ const CVInput: React.FC<Props> = ({
                      type="button"
                      onClick={triggerFileUpload}
                      className="absolute top-3 right-3 p-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-400 hover:text-white transition-colors border border-slate-700"
-                     title="Upload new PDF (replaces text)"
+                     title="Upload new file (replaces text)"
                    >
                      <FileUp className="w-4 h-4" />
                    </button>
@@ -277,9 +331,9 @@ const CVInput: React.FC<Props> = ({
 
             <button
               type="submit"
-              disabled={!text.trim() || isLoading || isPdfProcessing}
+              disabled={(!text.trim() && !selectedImage) || isLoading || isPdfProcessing}
               className={`w-full flex items-center justify-center gap-2 py-4 rounded-xl font-bold text-white transition-all tour-analyze-btn
-                ${!text.trim() || isLoading || isPdfProcessing
+                ${(!text.trim() && !selectedImage) || isLoading || isPdfProcessing
                   ? 'bg-slate-800 cursor-not-allowed text-slate-500' 
                   : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:shadow-[0_0_20px_rgba(99,102,241,0.5)] hover:scale-[1.01]'
                 }`}

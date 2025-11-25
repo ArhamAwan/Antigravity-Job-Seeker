@@ -19,6 +19,7 @@ const App: React.FC = () => {
   
   // Lifted state to support "Back" navigation without data loss
   const [cvText, setCvText] = useState('');
+  const [cvImage, setCvImage] = useState<{ mimeType: string, data: string } | null>(null);
   const [country, setCountry] = useState<string>('United States');
 
   // Load alert state from local storage on mount
@@ -36,7 +37,9 @@ const App: React.FC = () => {
     setPhase(AppPhase.ANALYZING);
     setError(null);
     try {
-      const result = await analyzeCV(cvText);
+      // Prioritize Image if present, otherwise Text
+      const input = cvImage ? cvImage : cvText;
+      const result = await analyzeCV(input);
       setAnalysis(result);
       setPhase(AppPhase.REVIEW_ANALYSIS);
     } catch (err) {
@@ -98,6 +101,7 @@ const App: React.FC = () => {
     setError(null);
     setCountry('United States');
     setCvText('');
+    setCvImage(null);
   };
 
   return (
@@ -171,7 +175,9 @@ const App: React.FC = () => {
                  onTextChange={setCvText}
                  onCountryChange={setCountry}
                  onAnalyze={handleAnalysis} 
-                 isLoading={phase === AppPhase.ANALYZING} 
+                 isLoading={phase === AppPhase.ANALYZING}
+                 onImageSelect={setCvImage}
+                 selectedImage={cvImage}
                />
              </div>
           )}

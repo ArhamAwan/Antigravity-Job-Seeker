@@ -10,14 +10,11 @@ const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
  * Phase 1: Deep Parsing
  * Analyzes the raw CV text to extract skills, roles, and generate boolean search strings.
  */
-export const analyzeCV = async (cvText: string): Promise<CVAnalysis> => {
+export const analyzeCV = async (cvInput: string | { mimeType: string, data: string }): Promise<CVAnalysis> => {
   // Initialize client per request to ensure fresh state/key usage
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
-  // Truncate text if it's excessively long (e.g. > 40k chars) to avoid payload limits/timeouts
-  const safeText = cvText.length > 40000 ? cvText.substring(0, 40000) : cvText;
-
-  const prompt = `
+  const systemPrompt = `
     You are the "Antigravity Job Agent". Your task is to perform a deep semantic analysis of the provided CV.
     
     1. Extract specific Hard Skills and Soft Skills.
@@ -28,10 +25,24 @@ export const analyzeCV = async (cvText: string): Promise<CVAnalysis> => {
        - String 1 (Strict): (Role A OR Role B) AND (Skill 1 AND Skill 2)
        - String 2 (Creative): Focus on the problem they solve, not just titles.
        - String 3 (Niche): Focus on adjacent industries or specific high-value skills.
-    
-    CV TEXT:
-    ${safeText}
   `;
+
+  let contents: any[] = [];
+
+  if (typeof cvInput === 'string') {
+      // Text Mode
+      const safeText = cvInput.length > 40000 ? cvInput.substring(0, 40000) : cvInput;
+      contents = [
+          { text: systemPrompt },
+          { text: `CV TEXT:\n${safeText}` }
+      ];
+  } else {
+      // Image Mode (Multimodal)
+      contents = [
+          { text: systemPrompt },
+          { inlineData: { mimeType: cvInput.mimeType, data: cvInput.data } }
+      ];
+  }
 
   const schema: Schema = {
     type: Type.OBJECT,
@@ -64,7 +75,7 @@ export const analyzeCV = async (cvText: string): Promise<CVAnalysis> => {
     try {
       const response = await ai.models.generateContent({
         model: ANALYSIS_MODEL,
-        contents: prompt,
+        contents: contents,
         config: {
           responseMimeType: "application/json",
           responseSchema: schema,

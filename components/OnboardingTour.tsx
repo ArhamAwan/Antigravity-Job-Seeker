@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import Joyride, { CallBackProps, STATUS, Step } from 'react-joyride';
+import Joyride, { CallBackProps, STATUS, Step, ACTIONS, EVENTS } from 'react-joyride';
 
 const OnboardingTour: React.FC = () => {
   const [run, setRun] = useState(false);
@@ -13,9 +13,11 @@ const OnboardingTour: React.FC = () => {
   }, []);
 
   const handleJoyrideCallback = (data: CallBackProps) => {
-    const { status } = data;
+    const { status, action, type } = data;
     const finishedStatuses: string[] = [STATUS.FINISHED, STATUS.SKIPPED];
-    if (finishedStatuses.includes(status)) {
+    
+    // Stop if finished, skipped, or explicitly closed
+    if (finishedStatuses.includes(status) || action === ACTIONS.CLOSE || type === EVENTS.TOUR_END) {
       setRun(false);
       localStorage.setItem('jobnado_tour_seen', 'true');
     }
@@ -38,7 +40,7 @@ const OnboardingTour: React.FC = () => {
       content: (
         <div className="text-left space-y-2">
           <h3 className="font-bold text-lg text-indigo-400">Step 1: Upload Trajectory 📄</h3>
-          <p className="text-slate-300">Paste your CV text or upload a PDF here. Our AI will analyze your skills and experience to find hidden opportunities.</p>
+          <p className="text-slate-300">Paste your CV text, upload a PDF, or <b>drop an image</b> directly. Our AI will analyze your skills and experience to find hidden opportunities.</p>
         </div>
       ),
     },
