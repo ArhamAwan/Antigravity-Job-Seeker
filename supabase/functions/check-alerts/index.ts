@@ -93,7 +93,7 @@ serve(async (req) => {
             'Authorization': `Bearer ${RESEND_API_KEY}`
           },
           body: JSON.stringify({
-            from: 'JobNado AI <onboarding@resend.dev>',
+            from: 'JobNado AI <noreply@jobnadoai.xyz>',
             to: alert.email,
             subject: `JobNado Alert: ${jobs.length} New ${alert.role} Jobs`,
             html: `

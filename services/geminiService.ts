@@ -462,3 +462,54 @@ export const generateCoverLetter = async (
     return "Dear Hiring Manager,\n\nI am writing to express my strong interest in this position. My skills and experience align well with the requirements...\n\n(Generation failed, please try again)";
   }
 };
+
+/**
+ * Feature: Salary Estimator
+ * Estimates salary range for a specific role and location.
+ */
+export const estimateSalary = async (
+  job: JobOpportunity,
+  analysis: CVAnalysis
+): Promise<{ min: number; max: number; currency: string; confidence: string; explanation: string }> => {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+
+  const prompt = `
+    Act as a compensation analyst. Estimate the base salary range for the following role:
+    
+    Role: ${job.title}
+    Company: ${job.company}
+    Location: ${job.location || "Remote/Global"}
+    Candidate Experience: ${analysis.experienceLevel}
+
+    Provide a realistic annual base salary range.
+    
+    Return ONLY a JSON object with this structure:
+    {
+      "min": number,
+      "max": number,
+      "currency": "string (e.g. USD, EUR, GBP)",
+      "confidence": "string (Low/Medium/High)",
+      "explanation": "string (Brief explanation of why this range is appropriate, max 2 sentences)"
+    }
+  `;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: prompt,
+      config: { responseMimeType: "application/json" }
+    });
+
+    if (!response.text) throw new Error("No salary data generated");
+    return JSON.parse(response.text);
+  } catch (e) {
+    console.error("Salary estimation failed", e);
+    return {
+      min: 0,
+      max: 0,
+      currency: "USD",
+      confidence: "Low",
+      explanation: "Could not estimate salary at this time."
+    };
+  }
+};

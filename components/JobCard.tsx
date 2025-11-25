@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { JobOpportunity, CVAnalysis } from '../types';
-import { ArrowUpRight, Building2, BrainCircuit, AlertCircle, MessageSquare, Copy, Check, Loader2, Mic, FileText } from 'lucide-react';
+import { ArrowUpRight, Building2, BrainCircuit, AlertCircle, MessageSquare, Copy, Check, Loader2, Mic, FileText, DollarSign } from 'lucide-react';
 import { generateOutreach } from '../services/geminiService';
 
 interface Props {
@@ -8,9 +8,10 @@ interface Props {
   analysis?: CVAnalysis | null; // Optional to support passing analysis context
   onPrepMe?: (job: JobOpportunity) => void;
   onCoverLetter?: (job: JobOpportunity) => void;
+  onSalary?: (job: JobOpportunity) => void;
 }
 
-const JobCard: React.FC<Props> = ({ job, analysis, onPrepMe, onCoverLetter }) => {
+const JobCard: React.FC<Props> = ({ job, analysis, onPrepMe, onCoverLetter, onSalary }) => {
   const [outreach, setOutreach] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -132,6 +133,14 @@ const JobCard: React.FC<Props> = ({ job, analysis, onPrepMe, onCoverLetter }) =>
             >
               <FileText className="w-4 h-4" />
               <span>Cover Letter</span>
+            </button>
+
+            <button
+              onClick={() => onSalary && onSalary(job)}
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-indigo-300 hover:text-indigo-200 rounded-lg transition-colors text-sm font-medium border border-slate-700"
+            >
+              <DollarSign className="w-4 h-4" />
+              <span>Salary</span>
             </button>
           </div>
 

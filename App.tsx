@@ -7,6 +7,7 @@ import JobCard from './components/JobCard';
 import JobAlertsModal from './components/JobAlertsModal';
 import InterviewPrepModal from './components/InterviewPrepModal';
 import CoverLetterModal from './components/CoverLetterModal';
+import SalaryModal from './components/SalaryModal';
 import OnboardingTour from './components/OnboardingTour';
 import { Analytics } from "@vercel/analytics/react";
 import { Rocket, Sparkles, AlertTriangle, RefreshCcw, ArrowLeft, BellRing, CheckCircle } from 'lucide-react';
@@ -20,6 +21,7 @@ const App: React.FC = () => {
   const [alertActive, setAlertActive] = useState(false);
   const [prepJob, setPrepJob] = useState<JobOpportunity | null>(null);
   const [coverLetterJob, setCoverLetterJob] = useState<JobOpportunity | null>(null);
+  const [salaryJob, setSalaryJob] = useState<JobOpportunity | null>(null);
   
   // Lifted state to support "Back" navigation without data loss
   const [cvText, setCvText] = useState('');
@@ -81,6 +83,10 @@ const App: React.FC = () => {
     setCoverLetterJob(job);
   };
 
+  const handleSalary = (job: JobOpportunity) => {
+    setSalaryJob(job);
+  };
+
   // Handles internal navigation backwards through the phases
   const handleBack = () => {
     setError(null);
@@ -116,6 +122,7 @@ const App: React.FC = () => {
     setCvImage(null);
     setPrepJob(null);
     setCoverLetterJob(null);
+    setSalaryJob(null);
   };
 
   return (
@@ -259,6 +266,7 @@ const App: React.FC = () => {
                     analysis={analysis}
                     onPrepMe={handlePrepMe}
                     onCoverLetter={handleCoverLetter}
+                    onSalary={handleSalary}
                   />
                 ))}
               </div>
@@ -301,6 +309,15 @@ const App: React.FC = () => {
             isOpen={!!coverLetterJob}
             onClose={() => setCoverLetterJob(null)}
             job={coverLetterJob}
+            analysis={analysis}
+          />
+        )}
+
+        {salaryJob && analysis && (
+          <SalaryModal
+            isOpen={!!salaryJob}
+            onClose={() => setSalaryJob(null)}
+            job={salaryJob}
             analysis={analysis}
           />
         )}

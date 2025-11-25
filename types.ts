@@ -18,6 +18,7 @@ export interface JobOpportunity {
   matchScore: number;
   reasoning: string;
   applicationUrl?: string; // From grounding
+  location?: string;
   isSimulated?: boolean; // If purely generated based on logic vs found via search
 }
 
