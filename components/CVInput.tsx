@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react';
-import { Upload, FileText, ChevronRight, Globe, FileUp, Loader2 } from 'lucide-react';
+import { Upload, FileText, ChevronRight, Globe, FileUp, Loader2, ChevronDown, MapPin } from 'lucide-react';
 import * as pdfjsLibProxy from 'pdfjs-dist';
+import { COUNTRIES } from '../constants/countries';
 
 // Configure PDF.js worker with robust import handling for CDN/ESM environments
 // Sometimes the module comes as a default export, sometimes as named exports.
@@ -32,7 +33,64 @@ const CVInput: React.FC<Props> = ({
   isLoading 
 }) => {
   const [isPdfProcessing, setIsPdfProcessing] = useState(false);
+  const [isDetectingLocation, setIsDetectingLocation] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleDetectLocation = async () => {
+    setIsDetectingLocation(true);
+    
+    try {
+      // Attempt 1: ipwho.is (Very CORS friendly)
+      try {
+        const response = await fetch('https://ipwho.is/');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.country) {
+            onCountryChange(data.country);
+            return; // Success!
+          }
+        }
+      } catch (e) {
+        console.warn("Primary location API (ipwho.is) failed, trying backup...", e);
+      }
+
+      // Attempt 2: freeipapi.com (Fallback)
+      try {
+        const response = await fetch('https://freeipapi.com/api/json');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.countryName) {
+            onCountryChange(data.countryName);
+            return; // Success!
+          }
+        }
+      } catch (e) {
+        console.warn("Secondary location API failed", e);
+      }
+
+      // Attempt 3: ipapi.co (Strict CORS, often fails on localhost but good in prod)
+      try {
+        const response = await fetch('https://ipapi.co/json/');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.country_name) {
+            onCountryChange(data.country_name);
+            return; // Success!
+          }
+        }
+      } catch (e) {
+        console.warn("Tertiary location API failed", e);
+      }
+
+      throw new Error("All location services failed");
+
+    } catch (error) {
+      console.error("Failed to detect location", error);
+      alert("Could not automatically detect location. Please select manually.");
+    } finally {
+      setIsDetectingLocation(false);
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -123,16 +181,35 @@ const CVInput: React.FC<Props> = ({
             <div className="space-y-4">
               {/* Country Input */}
               <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <Globe className="h-4 w-4 text-slate-500 group-focus-within:text-indigo-400 transition-colors" />
+                <div className="flex gap-2">
+                  <div className="relative flex-grow">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                      <Globe className="h-4 w-4 text-slate-500 group-focus-within:text-indigo-400 transition-colors" />
+                    </div>
+                    <select
+                      value={country}
+                      onChange={(e) => onCountryChange(e.target.value)}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl py-3 pl-10 pr-8 text-sm text-slate-300 appearance-none focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all font-sans"
+                    >
+                      <option value="" disabled>Select Target Country</option>
+                      {COUNTRIES.map(c => (
+                        <option key={c} value={c}>{c}</option>
+                      ))}
+                      {country && !COUNTRIES.includes(country) && <option value={country}>{country}</option>}
+                    </select>
+                    <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
+                  </div>
+                  
+                  <button
+                    type="button"
+                    onClick={handleDetectLocation}
+                    disabled={isDetectingLocation}
+                    className="px-4 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-slate-300 transition-colors disabled:opacity-50 flex items-center justify-center min-w-[50px]"
+                    title="Detect Location"
+                  >
+                    {isDetectingLocation ? <Loader2 className="w-5 h-5 animate-spin" /> : <MapPin className="w-5 h-5" />}
+                  </button>
                 </div>
-                <input
-                  type="text"
-                  value={country}
-                  onChange={(e) => onCountryChange(e.target.value)}
-                  placeholder="Target Country (e.g. United States, Remote, United Kingdom)"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl py-3 pl-10 pr-4 text-sm text-slate-300 placeholder-slate-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all font-sans"
-                />
               </div>
 
               {/* CV Textarea */}

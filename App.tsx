@@ -123,7 +123,7 @@ const App: React.FC = () => {
                 <Rocket className="w-6 h-6 text-white" />
               </div>
               <div className="hidden sm:block">
-                <h1 className="text-2xl font-display font-bold text-white tracking-tight">Antigravity</h1>
+                <h1 className="text-2xl font-display font-bold text-white tracking-tight">JobNado AI</h1>
                 <p className="text-xs text-indigo-300 tracking-widest uppercase">Job Agent v1.0</p>
               </div>
             </div>
@@ -154,10 +154,10 @@ const App: React.FC = () => {
              <div className="text-center max-w-2xl mx-auto space-y-8 animate-fade-in-up">
                <div className="space-y-4">
                  <h1 className="text-5xl md:text-6xl font-display font-bold text-white leading-tight">
-                   Defy Career <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">Gravity</span>
+                   JobNado <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">AI</span>
                  </h1>
                  <p className="text-lg text-slate-400 leading-relaxed max-w-lg mx-auto">
-                   Stop chasing applications. We analyze your trajectory, infer hidden roles, and pull live opportunities directly to you.
+                   Spinning up your next career move. We analyze your trajectory, infer hidden roles, and pull live opportunities directly to you.
                  </p>
                </div>
                <CVInput 
@@ -244,7 +244,7 @@ const App: React.FC = () => {
         
         {/* Footer */}
         <footer className="mt-12 text-center text-slate-600 text-xs py-4 border-t border-slate-900/50">
-          <p>Powered by Gemini 2.5 Flash • Antigravity Engine v1.0</p>
+          <p>Powered by Gemini 2.5 Flash • JobNado AI v1.0</p>
         </footer>
 
         {/* Modals */}

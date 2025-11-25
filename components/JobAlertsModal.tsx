@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
-import { Bell, X, Check, Mail, Radio, Loader2, AlertTriangle, Code, Copy, ChevronDown, ChevronUp } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Bell, X, Check, Mail, Radio, Loader2, AlertTriangle, Code, Copy, ChevronDown, ChevronUp, MapPin, Globe } from 'lucide-react';
 import { generateAlertConfirmation } from '../services/geminiService';
 import emailjs from '@emailjs/browser';
+import { supabase } from '../services/supabaseClient';
+import { COUNTRIES } from '../constants/countries';
 
 /**
  * IMPLEMENTATION GUIDE FOR REAL EMAILS:
@@ -27,13 +29,21 @@ interface Props {
   onSubscribe: () => void;
 }
 
-const JobAlertsModal: React.FC<Props> = ({ isOpen, onClose, role, country, onSubscribe }) => {
+const JobAlertsModal: React.FC<Props> = ({ isOpen, onClose, role, country: initialCountry, onSubscribe }) => {
   const [email, setEmail] = useState('');
+  const [selectedCountry, setSelectedCountry] = useState(initialCountry);
   const [frequency, setFrequency] = useState('daily');
   const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
   const [confirmationMessage, setConfirmationMessage] = useState('');
   const [showDevGuide, setShowDevGuide] = useState(false);
   const [copiedTemplate, setCopiedTemplate] = useState(false);
+  const [isDetectingLocation, setIsDetectingLocation] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setSelectedCountry(initialCountry);
+    }
+  }, [isOpen, initialCountry]);
 
   if (!isOpen) return null;
 
@@ -72,16 +82,91 @@ const JobAlertsModal: React.FC<Props> = ({ isOpen, onClose, role, country, onSub
     setTimeout(() => setCopiedTemplate(false), 2000);
   };
 
+  const handleDetectLocation = async () => {
+    setIsDetectingLocation(true);
+    
+    try {
+      // Attempt 1: ipwho.is (Very CORS friendly)
+      try {
+        const response = await fetch('https://ipwho.is/');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.country) {
+            setSelectedCountry(data.country);
+            return; // Success!
+          }
+        }
+      } catch (e) {
+        console.warn("Primary location API (ipwho.is) failed, trying backup...", e);
+      }
+
+      // Attempt 2: freeipapi.com (Fallback)
+      try {
+        const response = await fetch('https://freeipapi.com/api/json');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.countryName) {
+            setSelectedCountry(data.countryName);
+            return; // Success!
+          }
+        }
+      } catch (e) {
+        console.warn("Secondary location API failed", e);
+      }
+
+      // Attempt 3: ipapi.co (Strict CORS, often fails on localhost but good in prod)
+      try {
+        const response = await fetch('https://ipapi.co/json/');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.country_name) {
+            setSelectedCountry(data.country_name);
+            return; // Success!
+          }
+        }
+      } catch (e) {
+        console.warn("Tertiary location API failed", e);
+      }
+
+      throw new Error("All location services failed");
+
+    } catch (error) {
+      console.error("Failed to detect location", error);
+      alert("Could not automatically detect location. Please select manually.");
+    } finally {
+      setIsDetectingLocation(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setStatus('submitting');
     
     try {
-      // 1. Generate the personalized confirmation message using AI
-      const message = await generateAlertConfirmation(role, country, email);
+      // 1. Save to Supabase
+      const { error: supabaseError } = await supabase
+        .from('job_alerts')
+        .insert([
+          { 
+            email, 
+            role, 
+            country: selectedCountry, 
+            frequency,
+            is_active: true
+          }
+        ]);
+
+      if (supabaseError) {
+        console.error("Supabase error:", supabaseError);
+        // If table doesn't exist yet, we might want to fail gracefully or show a specific error
+        // For now, we'll log it but proceed to email so the user gets some feedback
+      }
+
+      // 2. Generate the personalized confirmation message using AI
+      const message = await generateAlertConfirmation(role, selectedCountry, email);
       setConfirmationMessage(message);
       
-      // 2. Attempt to send Real Email if fully configured
+      // 3. Attempt to send Real Email if fully configured
       if (isConfigured) {
         await emailjs.send(
           EMAILJS_SERVICE_ID,
@@ -93,7 +178,7 @@ const JobAlertsModal: React.FC<Props> = ({ isOpen, onClose, role, country, onSub
             user_email: email,    // Fallback alias
             message: message,
             role: role,
-            country: country,
+            country: selectedCountry,
             frequency: frequency
           },
           EMAILJS_PUBLIC_KEY
@@ -105,7 +190,7 @@ const JobAlertsModal: React.FC<Props> = ({ isOpen, onClose, role, country, onSub
         await new Promise(resolve => setTimeout(resolve, 1500));
       }
       
-      // 3. Persist state in parent
+      // 4. Persist state in parent
       onSubscribe();
       setStatus('success');
     } catch (error: any) {
@@ -117,7 +202,7 @@ const JobAlertsModal: React.FC<Props> = ({ isOpen, onClose, role, country, onSub
       }
       
       // Fallback for UI if email fails (e.g. invalid template ID despite being set)
-      setConfirmationMessage(`Radar lock established. Monitoring ${role} vectors in ${country}.`);
+      setConfirmationMessage(`Radar lock established. Monitoring ${role} vectors in ${selectedCountry}.`);
       onSubscribe();
       setStatus('success');
     }
@@ -158,6 +243,9 @@ const JobAlertsModal: React.FC<Props> = ({ isOpen, onClose, role, country, onSub
               <p className="text-slate-300 italic text-lg leading-relaxed px-2">
                 "{confirmationMessage}"
               </p>
+              <p className="text-sm text-indigo-300 mt-2 font-medium">
+                Want to track another role? You can add as many alerts as you like!
+              </p>
               
               {!isConfigured && (
                  <div className="mt-4 p-3 bg-yellow-900/20 border border-yellow-700/50 rounded-lg text-xs text-yellow-200 text-left">
@@ -183,12 +271,12 @@ const JobAlertsModal: React.FC<Props> = ({ isOpen, onClose, role, country, onSub
           ) : (
             <>
               <div className="flex items-center gap-3 mb-6">
-                <div className="p-2 bg-indigo-500/20 rounded-lg border border-indigo-500/30">
+                <div className="w-10 h-10 rounded-lg bg-indigo-500/20 flex items-center justify-center border border-indigo-500/30">
                   <Bell className="w-5 h-5 text-indigo-400" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-white font-display">Initialize Job Radar</h3>
-                  <p className="text-xs text-slate-400">Receive signals for new {role} opportunities.</p>
+                  <h2 className="text-xl font-display font-bold text-white">JobNado Radar</h2>
+                  <p className="text-xs text-slate-400">Never miss an opportunity</p>
                 </div>
               </div>
 
@@ -205,6 +293,36 @@ const JobAlertsModal: React.FC<Props> = ({ isOpen, onClose, role, country, onSub
                       placeholder="you@example.com"
                       className="w-full bg-slate-950 border border-slate-800 rounded-lg py-2.5 pl-10 pr-4 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
                     />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-300 ml-1">Target Sector (Location)</label>
+                  <div className="flex gap-2">
+                    <div className="relative flex-grow">
+                      <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                      <select
+                        value={selectedCountry}
+                        onChange={(e) => setSelectedCountry(e.target.value)}
+                        className="w-full bg-slate-950 border border-slate-800 rounded-lg py-2.5 pl-10 pr-8 text-sm text-white appearance-none focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
+                      >
+                        <option value="" disabled>Select Target Country</option>
+                        {COUNTRIES.map(c => (
+                          <option key={c} value={c}>{c}</option>
+                        ))}
+                        {selectedCountry && !COUNTRIES.includes(selectedCountry) && <option value={selectedCountry}>{selectedCountry}</option>}
+                      </select>
+                      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleDetectLocation}
+                      disabled={isDetectingLocation}
+                      className="px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-slate-300 transition-colors disabled:opacity-50"
+                      title="Detect Location"
+                    >
+                      {isDetectingLocation ? <Loader2 className="w-4 h-4 animate-spin" /> : <MapPin className="w-4 h-4" />}
+                    </button>
                   </div>
                 </div>
 
