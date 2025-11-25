@@ -69,6 +69,8 @@ const OnboardingTour: React.FC = () => {
       continuous
       showSkipButton
       showProgress
+      disableOverlayClose
+      disableCloseOnEsc
       callback={handleJoyrideCallback}
       styles={{
         options: {
