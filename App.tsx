@@ -6,6 +6,7 @@ import AnalysisDashboard from './components/AnalysisDashboard';
 import JobCard from './components/JobCard';
 import JobAlertsModal from './components/JobAlertsModal';
 import InterviewPrepModal from './components/InterviewPrepModal';
+import CoverLetterModal from './components/CoverLetterModal';
 import OnboardingTour from './components/OnboardingTour';
 import { Analytics } from "@vercel/analytics/react";
 import { Rocket, Sparkles, AlertTriangle, RefreshCcw, ArrowLeft, BellRing, CheckCircle } from 'lucide-react';
@@ -18,6 +19,7 @@ const App: React.FC = () => {
   const [isAlertModalOpen, setIsAlertModalOpen] = useState(false);
   const [alertActive, setAlertActive] = useState(false);
   const [prepJob, setPrepJob] = useState<JobOpportunity | null>(null);
+  const [coverLetterJob, setCoverLetterJob] = useState<JobOpportunity | null>(null);
   
   // Lifted state to support "Back" navigation without data loss
   const [cvText, setCvText] = useState('');
@@ -75,6 +77,10 @@ const App: React.FC = () => {
     setPrepJob(job);
   };
 
+  const handleCoverLetter = (job: JobOpportunity) => {
+    setCoverLetterJob(job);
+  };
+
   // Handles internal navigation backwards through the phases
   const handleBack = () => {
     setError(null);
@@ -109,6 +115,7 @@ const App: React.FC = () => {
     setCvText('');
     setCvImage(null);
     setPrepJob(null);
+    setCoverLetterJob(null);
   };
 
   return (
@@ -251,6 +258,7 @@ const App: React.FC = () => {
                     job={job} 
                     analysis={analysis}
                     onPrepMe={handlePrepMe}
+                    onCoverLetter={handleCoverLetter}
                   />
                 ))}
               </div>
@@ -284,6 +292,15 @@ const App: React.FC = () => {
             isOpen={!!prepJob}
             onClose={() => setPrepJob(null)}
             job={prepJob}
+            analysis={analysis}
+          />
+        )}
+
+        {coverLetterJob && analysis && (
+          <CoverLetterModal
+            isOpen={!!coverLetterJob}
+            onClose={() => setCoverLetterJob(null)}
+            job={coverLetterJob}
             analysis={analysis}
           />
         )}

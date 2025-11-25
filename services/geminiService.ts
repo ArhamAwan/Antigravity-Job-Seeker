@@ -411,3 +411,54 @@ export const evaluateInterviewAnswer = async (
     };
   }
 };
+
+/**
+ * Feature: Auto-Cover Letter
+ * Generates a tailored cover letter based on CV and Job Description.
+ */
+export const generateCoverLetter = async (
+  job: JobOpportunity,
+  analysis: CVAnalysis
+): Promise<string> => {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+
+  const prompt = `
+    You are a professional career coach and expert copywriter.
+    
+    Candidate Profile:
+    - Skills: ${analysis.hardSkills.join(', ')}
+    - Experience Level: ${analysis.experienceLevel}
+    - Soft Skills: ${analysis.softSkills.join(', ')}
+
+    Target Job:
+    - Role: ${job.title}
+    - Company: ${job.company}
+    - Context: ${job.reasoning}
+
+    Task: Write a compelling, professional cover letter for this candidate applying to this job.
+    
+    Guidelines:
+    - Tone: Professional, confident, yet authentic.
+    - Structure:
+      1. Hook: specific interest in ${job.company} and the role.
+      2. Body: Connect specific candidate skills to the job's requirements (inferred from title/reasoning).
+      3. Closing: Call to action.
+    - Length: Concise (approx 250-300 words).
+    - Do NOT use placeholders like "[Your Name]" or "[Date]" - use generic placeholders like "Candidate Name" if absolutely necessary, but try to write it so it's ready to copy-paste with minimal editing.
+    - Focus on VALUE ADD. Why should they hire this person?
+
+    Return ONLY the cover letter text.
+  `;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: prompt,
+    });
+
+    return response.text || "Could not generate cover letter.";
+  } catch (e) {
+    console.error("Cover letter generation failed", e);
+    return "Dear Hiring Manager,\n\nI am writing to express my strong interest in this position. My skills and experience align well with the requirements...\n\n(Generation failed, please try again)";
+  }
+};

@@ -1,15 +1,16 @@
 import React, { useState } from 'react';
 import { JobOpportunity, CVAnalysis } from '../types';
-import { ArrowUpRight, Building2, BrainCircuit, AlertCircle, MessageSquare, Copy, Check, Loader2, Mic } from 'lucide-react';
+import { ArrowUpRight, Building2, BrainCircuit, AlertCircle, MessageSquare, Copy, Check, Loader2, Mic, FileText } from 'lucide-react';
 import { generateOutreach } from '../services/geminiService';
 
 interface Props {
   job: JobOpportunity;
   analysis?: CVAnalysis | null; // Optional to support passing analysis context
   onPrepMe?: (job: JobOpportunity) => void;
+  onCoverLetter?: (job: JobOpportunity) => void;
 }
 
-const JobCard: React.FC<Props> = ({ job, analysis, onPrepMe }) => {
+const JobCard: React.FC<Props> = ({ job, analysis, onPrepMe, onCoverLetter }) => {
   const [outreach, setOutreach] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -123,6 +124,14 @@ const JobCard: React.FC<Props> = ({ job, analysis, onPrepMe }) => {
             >
               <Mic className="w-4 h-4" />
               <span>Prep Me</span>
+            </button>
+
+            <button
+              onClick={() => onCoverLetter && onCoverLetter(job)}
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-indigo-300 hover:text-indigo-200 rounded-lg transition-colors text-sm font-medium border border-slate-700"
+            >
+              <FileText className="w-4 h-4" />
+              <span>Cover Letter</span>
             </button>
           </div>
 
