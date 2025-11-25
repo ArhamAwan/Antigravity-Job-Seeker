@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { JobOpportunity, CVAnalysis } from '../types';
-import { ArrowUpRight, Building2, BrainCircuit, AlertCircle, MessageSquare, Copy, Check, Loader2, Mic, FileText, DollarSign } from 'lucide-react';
+import { ArrowUpRight, Building2, BrainCircuit, AlertCircle, MessageSquare, Copy, Check, Loader2, Mic, FileText, ExternalLink } from 'lucide-react';
 import { generateOutreach } from '../services/geminiService';
 
 interface Props {
@@ -8,10 +8,9 @@ interface Props {
   analysis?: CVAnalysis | null; // Optional to support passing analysis context
   onPrepMe?: (job: JobOpportunity) => void;
   onCoverLetter?: (job: JobOpportunity) => void;
-  onSalary?: (job: JobOpportunity) => void;
 }
 
-const JobCard: React.FC<Props> = ({ job, analysis, onPrepMe, onCoverLetter, onSalary }) => {
+const JobCard: React.FC<Props> = ({ job, analysis, onPrepMe, onCoverLetter }) => {
   const [outreach, setOutreach] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -44,7 +43,8 @@ const JobCard: React.FC<Props> = ({ job, analysis, onPrepMe, onCoverLetter, onSa
   };
 
   return (
-    <div className="group relative bg-slate-900 border border-slate-800 hover:border-slate-600 rounded-2xl p-6 transition-all hover:shadow-[0_0_20px_rgba(99,102,241,0.15)] overflow-hidden flex flex-col">
+    <div className="tour-job-card group relative bg-slate-900/80 backdrop-blur-md border border-indigo-500/50 rounded-xl p-6 transition-all duration-300 hover:shadow-[0_0_30px_rgba(99,102,241,0.1)] animate-fade-in-up overflow-hidden flex flex-col">
+
       {/* Background Gradient Effect */}
       <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
 
@@ -120,27 +120,19 @@ const JobCard: React.FC<Props> = ({ job, analysis, onPrepMe, onCoverLetter, onSa
             )}
 
             <button
-              onClick={() => onPrepMe && onPrepMe(job)}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-indigo-300 hover:text-indigo-200 rounded-lg transition-colors text-sm font-medium border border-slate-700"
+              onClick={() => onPrepMe?.(job)}
+              className="tour-prep-btn flex-1 bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 border border-slate-700"
             >
-              <Mic className="w-4 h-4" />
-              <span>Prep Me</span>
+              <Mic className="w-4 h-4 text-indigo-400" />
+              Prep Me
             </button>
 
             <button
-              onClick={() => onCoverLetter && onCoverLetter(job)}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-indigo-300 hover:text-indigo-200 rounded-lg transition-colors text-sm font-medium border border-slate-700"
+              onClick={() => onCoverLetter?.(job)}
+              className="tour-cover-btn flex-1 bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 border border-slate-700"
             >
-              <FileText className="w-4 h-4" />
-              <span>Cover Letter</span>
-            </button>
-
-            <button
-              onClick={() => onSalary && onSalary(job)}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-indigo-300 hover:text-indigo-200 rounded-lg transition-colors text-sm font-medium border border-slate-700"
-            >
-              <DollarSign className="w-4 h-4" />
-              <span>Salary</span>
+              <FileText className="w-4 h-4 text-purple-400" />
+              Cover Letter
             </button>
           </div>
 

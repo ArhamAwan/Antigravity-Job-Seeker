@@ -35,7 +35,7 @@ const AnalysisDashboard: React.FC<Props> = ({ analysis, onProceed, isSearching, 
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Core Stats Card */}
-        <div className="bg-slate-900/50 backdrop-blur-md border border-slate-700/50 rounded-2xl p-6 shadow-xl">
+        <div className="tour-competencies bg-slate-900/80 backdrop-blur-md border border-slate-700/50 rounded-2xl p-6 shadow-xl">
           <div className="flex items-center gap-2 mb-4">
             <Target className="w-5 h-5 text-indigo-400" />
             <h3 className="text-lg font-semibold text-white">Core Competencies</h3>
@@ -64,7 +64,7 @@ const AnalysisDashboard: React.FC<Props> = ({ analysis, onProceed, isSearching, 
         </div>
 
         {/* Roles Card */}
-        <div className="bg-slate-900/50 backdrop-blur-md border border-slate-700/50 rounded-2xl p-6 shadow-xl flex flex-col">
+        <div className="tour-permutations bg-slate-900/80 backdrop-blur-md border border-slate-700/50 rounded-2xl p-6 shadow-xl flex flex-col">
           <div className="flex items-center gap-2 mb-4">
             <Briefcase className="w-5 h-5 text-purple-400" />
             <h3 className="text-lg font-semibold text-white">Permutations Detected</h3>
@@ -103,7 +103,7 @@ const AnalysisDashboard: React.FC<Props> = ({ analysis, onProceed, isSearching, 
         
         <div className="grid gap-4">
           {analysis.antigravityBooleanStrings.map((item, idx) => (
-            <div key={idx} className="group bg-slate-800/40 border border-slate-700/50 hover:border-indigo-500/30 rounded-xl p-4 transition-all">
+            <div key={idx} className="group bg-slate-900/80 backdrop-blur-md border border-indigo-500/50 hover:border-indigo-500/80 rounded-xl p-4 transition-all shadow-lg">
               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 mb-2">
                 <span className="text-xs font-bold text-indigo-400 uppercase tracking-wider mt-1">{item.label}</span>
                 <div className="flex gap-2">
@@ -159,7 +159,7 @@ const AnalysisDashboard: React.FC<Props> = ({ analysis, onProceed, isSearching, 
         <button
           onClick={() => onProceed()}
           disabled={isSearching}
-          className="group relative inline-flex items-center justify-center px-8 py-4 font-bold text-white transition-all duration-200 bg-indigo-600 font-display rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="tour-sweep-btn group relative inline-flex items-center justify-center px-8 py-4 font-bold text-white transition-all duration-200 bg-indigo-600 font-display rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isSearching ? (
              <span className="flex items-center gap-2">

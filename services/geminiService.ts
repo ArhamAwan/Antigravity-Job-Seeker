@@ -142,8 +142,8 @@ export const searchOpportunities = async (
   try {
     let response;
     
-    // Retry logic for search (3 attempts)
-    for (let attempt = 0; attempt < 3; attempt++) {
+    // Retry logic for search (Reduced to 2 attempts for speed)
+    for (let attempt = 0; attempt < 2; attempt++) {
         try {
             response = await ai.models.generateContent({
                 model: SEARCH_MODEL,
@@ -155,8 +155,8 @@ export const searchOpportunities = async (
             break; // Success
         } catch (e) {
             console.warn(`Search attempt ${attempt + 1} failed`, e);
-            if (attempt === 2) throw e; // Throw to outer catch to trigger fallback
-            await delay(1000 * (attempt + 1));
+            if (attempt === 1) throw e; // Throw to outer catch to trigger fallback
+            // Removed delay to fail-fast to simulation if API is struggling
         }
     }
 
@@ -467,49 +467,3 @@ export const generateCoverLetter = async (
  * Feature: Salary Estimator
  * Estimates salary range for a specific role and location.
  */
-export const estimateSalary = async (
-  job: JobOpportunity,
-  analysis: CVAnalysis
-): Promise<{ min: number; max: number; currency: string; confidence: string; explanation: string }> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-
-  const prompt = `
-    Act as a compensation analyst. Estimate the base salary range for the following role:
-    
-    Role: ${job.title}
-    Company: ${job.company}
-    Location: ${job.location || "Remote/Global"}
-    Candidate Experience: ${analysis.experienceLevel}
-
-    Provide a realistic annual base salary range.
-    
-    Return ONLY a JSON object with this structure:
-    {
-      "min": number,
-      "max": number,
-      "currency": "string (e.g. USD, EUR, GBP)",
-      "confidence": "string (Low/Medium/High)",
-      "explanation": "string (Brief explanation of why this range is appropriate, max 2 sentences)"
-    }
-  `;
-
-  try {
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: prompt,
-      config: { responseMimeType: "application/json" }
-    });
-
-    if (!response.text) throw new Error("No salary data generated");
-    return JSON.parse(response.text);
-  } catch (e) {
-    console.error("Salary estimation failed", e);
-    return {
-      min: 0,
-      max: 0,
-      currency: "USD",
-      confidence: "Low",
-      explanation: "Could not estimate salary at this time."
-    };
-  }
-};

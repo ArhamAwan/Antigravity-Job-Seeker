@@ -194,7 +194,7 @@ const CVInput: React.FC<Props> = ({
 
   return (
     <div className="w-full max-w-2xl mx-auto animate-fade-in-up">
-      <div className="bg-slate-900/80 backdrop-blur-sm border border-slate-700 rounded-2xl p-1 shadow-2xl">
+      <div className="tour-cv-input bg-slate-900/80 backdrop-blur-md border border-slate-700 rounded-2xl p-1 shadow-2xl">
         <form onSubmit={handleSubmit} className="bg-slate-900 rounded-xl p-6 relative overflow-hidden">
           
           {/* Decorative gradients */}

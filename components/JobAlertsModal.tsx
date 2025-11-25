@@ -1,25 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Bell, X, Check, Mail, Radio, Loader2, AlertTriangle, Code, Copy, ChevronDown, ChevronUp, MapPin, Globe } from 'lucide-react';
 import { generateAlertConfirmation } from '../services/geminiService';
-import emailjs from '@emailjs/browser';
 import { supabase } from '../services/supabaseClient';
 import { COUNTRIES } from '../constants/countries';
-
-/**
- * IMPLEMENTATION GUIDE FOR REAL EMAILS:
- * 
- * 1. Go to https://www.emailjs.com/ (Free Tier)
- * 2. Create a Service (connect Gmail/Outlook) -> Get SERVICE_ID (Configured)
- * 3. Create a Template -> Get TEMPLATE_ID
- *    - Template Variables: {{message}}, {{role}}, {{country}}, {{frequency}}, {{to_email}}
- *    - IMPORTANT: In Template Settings (Right Sidebar), set "To Email" to {{to_email}}
- * 4. Get your Public Key from Account Settings -> Get PUBLIC_KEY (Configured)
- */
-
-// CREDENTIALS CONFIGURED
-const EMAILJS_SERVICE_ID: string = "service_yc6df84";
-const EMAILJS_TEMPLATE_ID: string = "template_9vnsg32"; 
-const EMAILJS_PUBLIC_KEY: string = "Dh99DkcKCVF9N5wVQ";
 
 interface Props {
   isOpen: boolean;
@@ -48,12 +31,7 @@ const JobAlertsModal: React.FC<Props> = ({ isOpen, onClose, role, country: initi
   if (!isOpen) return null;
 
   // Configuration Status Check
-  const missingConfig = [];
-  if (EMAILJS_SERVICE_ID === "YOUR_SERVICE_ID" || !EMAILJS_SERVICE_ID) missingConfig.push("Service ID");
-  if (EMAILJS_TEMPLATE_ID === "YOUR_TEMPLATE_ID" || !EMAILJS_TEMPLATE_ID) missingConfig.push("Template ID");
-  if (EMAILJS_PUBLIC_KEY === "YOUR_PUBLIC_KEY" || !EMAILJS_PUBLIC_KEY) missingConfig.push("Public Key");
-  
-  const isConfigured = missingConfig.length === 0;
+  const isConfigured = true; // Always true now that we use Supabase Edge Functions
 
   const ANTIGRAVITY_EMAIL_TEMPLATE = `
 <div style="background-color:#0f172a;padding:40px;font-family:'Courier New',monospace;color:#e2e8f0;border-radius:16px;">
@@ -166,42 +144,31 @@ const JobAlertsModal: React.FC<Props> = ({ isOpen, onClose, role, country: initi
       const message = await generateAlertConfirmation(role, selectedCountry, email);
       setConfirmationMessage(message);
       
-      // 3. Attempt to send Real Email if fully configured
-      if (isConfigured) {
-        await emailjs.send(
-          EMAILJS_SERVICE_ID,
-          EMAILJS_TEMPLATE_ID,
-          {
-            to_email: email,      // Primary variable for recipient
-            email: email,         // Fallback alias
-            reply_to: email,      // Fallback alias
-            user_email: email,    // Fallback alias
-            message: message,
-            role: role,
-            country: selectedCountry,
-            frequency: frequency
-          },
-          EMAILJS_PUBLIC_KEY
-        );
-        console.log("Real email sent successfully via EmailJS");
+      // 3. Send Confirmation Email via Resend (Edge Function)
+      const { error: emailError } = await supabase.functions.invoke('send-confirmation', {
+        body: {
+          email,
+          role,
+          country: selectedCountry,
+          frequency,
+          message
+        }
+      });
+
+      if (emailError) {
+        console.error("Failed to send confirmation email:", emailError);
+        // We don't block the UI success state, but we log it
       } else {
-        console.warn("EmailJS not fully configured. Running in simulation mode.");
-        // Simulated delay
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        console.log("Confirmation email sent via Resend");
       }
       
       // 4. Persist state in parent
       onSubscribe();
       setStatus('success');
     } catch (error: any) {
-      const errorMessage = error.text ? error.text : JSON.stringify(error);
-      console.error("Failed to send email:", errorMessage);
+      console.error("Alert setup failed:", error);
       
-      if (errorMessage.includes("recipients address is empty")) {
-         console.warn("TIP: Go to EmailJS Template -> Settings -> 'To Email' field. Set it to {{to_email}}");
-      }
-      
-      // Fallback for UI if email fails (e.g. invalid template ID despite being set)
+      // Fallback for UI
       setConfirmationMessage(`Radar lock established. Monitoring ${role} vectors in ${selectedCountry}.`);
       onSubscribe();
       setStatus('success');
@@ -247,16 +214,7 @@ const JobAlertsModal: React.FC<Props> = ({ isOpen, onClose, role, country: initi
                 Want to track another role? You can add as many alerts as you like!
               </p>
               
-              {!isConfigured && (
-                 <div className="mt-4 p-3 bg-yellow-900/20 border border-yellow-700/50 rounded-lg text-xs text-yellow-200 text-left">
-                    <div className="flex items-center gap-2 mb-1 font-bold">
-                       <AlertTriangle className="w-3 h-3" />
-                       Simulation Mode Active
-                    </div>
-                    Real emails disabled. Missing: <span className="font-mono">{missingConfig.join(', ')}</span>.
-                    <br/>Update <code>components/JobAlertsModal.tsx</code> to fix.
-                 </div>
-              )}
+              {/* Simulation Mode warning removed as we are now using Supabase Edge Functions */}
 
               <p className="text-slate-500 text-xs mt-4">
                 Transmission frequency set to: {frequency}

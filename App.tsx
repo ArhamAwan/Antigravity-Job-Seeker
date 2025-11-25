@@ -7,7 +7,6 @@ import JobCard from './components/JobCard';
 import JobAlertsModal from './components/JobAlertsModal';
 import InterviewPrepModal from './components/InterviewPrepModal';
 import CoverLetterModal from './components/CoverLetterModal';
-import SalaryModal from './components/SalaryModal';
 import OnboardingTour from './components/OnboardingTour';
 import { Analytics } from "@vercel/analytics/react";
 import { Rocket, Sparkles, AlertTriangle, RefreshCcw, ArrowLeft, BellRing, CheckCircle } from 'lucide-react';
@@ -21,7 +20,6 @@ const App: React.FC = () => {
   const [alertActive, setAlertActive] = useState(false);
   const [prepJob, setPrepJob] = useState<JobOpportunity | null>(null);
   const [coverLetterJob, setCoverLetterJob] = useState<JobOpportunity | null>(null);
-  const [salaryJob, setSalaryJob] = useState<JobOpportunity | null>(null);
   
   // Lifted state to support "Back" navigation without data loss
   const [cvText, setCvText] = useState('');
@@ -83,10 +81,6 @@ const App: React.FC = () => {
     setCoverLetterJob(job);
   };
 
-  const handleSalary = (job: JobOpportunity) => {
-    setSalaryJob(job);
-  };
-
   // Handles internal navigation backwards through the phases
   const handleBack = () => {
     setError(null);
@@ -122,21 +116,20 @@ const App: React.FC = () => {
     setCvImage(null);
     setPrepJob(null);
     setCoverLetterJob(null);
-    setSalaryJob(null);
   };
 
   return (
     <div className="min-h-screen relative overflow-x-hidden bg-[url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072&auto=format&fit=crop')] bg-cover bg-fixed bg-center">
       {/* Dark Overlay */}
-      <div className="absolute inset-0 bg-slate-950/90 backdrop-blur-[2px]"></div>
+      <div className="absolute inset-0 bg-slate-950/75 backdrop-blur-[1px]"></div>
       
       <Analytics />
-      <OnboardingTour />
+      <OnboardingTour currentPhase={phase} />
 
       <div className="relative z-10 container mx-auto px-4 py-8 min-h-screen flex flex-col">
         
         {/* Header */}
-        <header className="flex justify-between items-center mb-12">
+        <header className="flex justify-between items-center mb-2">
           <div className="flex items-center gap-4">
              {phase !== AppPhase.IDLE && (
                 <button 
@@ -181,7 +174,7 @@ const App: React.FC = () => {
           )}
 
           {(phase === AppPhase.IDLE || phase === AppPhase.ANALYZING) && (
-             <div className="text-center max-w-2xl mx-auto space-y-8 animate-fade-in-up">
+             <div className="text-center max-w-2xl mx-auto space-y-4 animate-fade-in-up">
                <div className="space-y-4">
                  <h1 className="text-5xl md:text-6xl font-display font-bold text-white leading-tight">
                    JobNado <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">AI</span>
@@ -240,11 +233,11 @@ const App: React.FC = () => {
                    <button 
                      onClick={() => !alertActive && setIsAlertModalOpen(true)}
                      disabled={alertActive}
-                     className={`px-4 py-2 border rounded-lg transition-all text-sm font-medium flex items-center gap-2
-                       ${alertActive 
-                         ? 'bg-green-500/10 border-green-500/30 text-green-400 cursor-default' 
-                         : 'bg-slate-800 hover:bg-slate-700 text-indigo-300 hover:text-indigo-200 border-slate-700 hover:border-slate-600'
-                       }`}
+                      className={`tour-radar-btn px-4 py-2 border rounded-lg transition-all text-sm font-medium flex items-center gap-2
+                        ${alertActive 
+                          ? 'bg-green-500/10 border-green-500/30 text-green-400 cursor-default' 
+                          : 'bg-slate-800 hover:bg-slate-700 text-indigo-300 hover:text-indigo-200 border-slate-700 hover:border-slate-600'
+                        }`}
                    >
                      {alertActive ? <CheckCircle className="w-4 h-4" /> : <BellRing className="w-4 h-4" />}
                      {alertActive ? 'Radar Active' : 'Enable Job Radar'}
@@ -266,7 +259,6 @@ const App: React.FC = () => {
                     analysis={analysis}
                     onPrepMe={handlePrepMe}
                     onCoverLetter={handleCoverLetter}
-                    onSalary={handleSalary}
                   />
                 ))}
               </div>
@@ -309,15 +301,6 @@ const App: React.FC = () => {
             isOpen={!!coverLetterJob}
             onClose={() => setCoverLetterJob(null)}
             job={coverLetterJob}
-            analysis={analysis}
-          />
-        )}
-
-        {salaryJob && analysis && (
-          <SalaryModal
-            isOpen={!!salaryJob}
-            onClose={() => setSalaryJob(null)}
-            job={salaryJob}
             analysis={analysis}
           />
         )}
