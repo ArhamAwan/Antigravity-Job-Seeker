@@ -6,6 +6,7 @@ import AnalysisDashboard from './components/AnalysisDashboard';
 import JobCard from './components/JobCard';
 import JobAlertsModal from './components/JobAlertsModal';
 import OnboardingTour from './components/OnboardingTour';
+import { Analytics } from "@vercel/analytics/react";
 import { Rocket, Sparkles, AlertTriangle, RefreshCcw, ArrowLeft, BellRing, CheckCircle } from 'lucide-react';
 
 const App: React.FC = () => {
@@ -104,6 +105,7 @@ const App: React.FC = () => {
       {/* Dark Overlay */}
       <div className="absolute inset-0 bg-slate-950/90 backdrop-blur-[2px]"></div>
       
+      <Analytics />
       <OnboardingTour />
 
       <div className="relative z-10 container mx-auto px-4 py-8 min-h-screen flex flex-col">
