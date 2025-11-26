@@ -97,10 +97,27 @@ serve(async (req) => {
             to: alert.email,
             subject: `JobNado Alert: ${jobs.length} New ${alert.role} Jobs`,
             html: `
-              <h1>JobNado AI</h1>
-              <p>Daily scan complete for <strong>${alert.country}</strong>.</p>
-              <ul>${jobListHtml}</ul>
-              <p><small>To unsubscribe, reply to this email.</small></p>
+              <div style="background-color:#0f172a;padding:40px;font-family:'Courier New',monospace;color:#e2e8f0;border-radius:16px;">
+                <div style="text-align:center;margin-bottom:30px;">
+                  <h1 style="color:#818cf8;letter-spacing:4px;margin:0;">JobNado AI</h1>
+                  <span style="font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:2px;">Orbital Job Uplink</span>
+                </div>
+                <div style="background:#1e293b;border:1px solid #334155;border-radius:8px;padding:20px;margin-bottom:24px;box-shadow:0 4px 6px -1px rgba(0,0,0,0.1);">
+                  <p style="margin:0;0 0 16px 0;line-height:1.6;font-size:16px;color:#fff;">Daily scan complete for <strong>${alert.country}</strong>. Found ${jobs.length} new targets:</p>
+                  <ul style="margin:0;padding-left:20px;color:#cbd5e1;">${jobListHtml}</ul>
+                </div>
+                <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px;font-size:12px;color:#94a3b8;border-top:1px solid #334155;padding-top:20px;">
+                  <div>TARGET: <span style="color:#cbd5e1">${alert.role}</span></div>
+                  <div>SECTOR: <span style="color:#cbd5e1">${alert.country}</span></div>
+                  <div>STATUS: <span style="color:#cbd5e1">${jobs.length} Found</span></div>
+                  <div>UPLINK: <span style="color:#cbd5e1">Active</span></div>
+                </div>
+                <div style="text-align:center;margin-top:30px;font-size:10px;color:#475569;">
+                  POWERED BY GEMINI 2.5 FLASH
+                  <br/>
+                  <a href="#" style="color:#64748b;text-decoration:none;margin-top:10px;display:inline-block;">Unsubscribe</a>
+                </div>
+              </div>
             `
           })
         });

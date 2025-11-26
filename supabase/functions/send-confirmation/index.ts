@@ -31,7 +31,7 @@ serve(async (req) => {
         html: `
           <div style="background-color:#0f172a;padding:40px;font-family:'Courier New',monospace;color:#e2e8f0;border-radius:16px;">
             <div style="text-align:center;margin-bottom:30px;">
-              <h1 style="color:#818cf8;letter-spacing:4px;margin:0;">ANTIGRAVITY</h1>
+              <h1 style="color:#818cf8;letter-spacing:4px;margin:0;">JobNado AI</h1>
               <span style="font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:2px;">Orbital Job Uplink</span>
             </div>
             <div style="background:#1e293b;border:1px solid #334155;border-radius:8px;padding:20px;margin-bottom:24px;box-shadow:0 4px 6px -1px rgba(0,0,0,0.1);">

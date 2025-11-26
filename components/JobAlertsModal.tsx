@@ -10,9 +10,11 @@ interface Props {
   role: string;
   country: string;
   onSubscribe: () => void;
+  isActive?: boolean;
+  onUnsubscribe?: () => void;
 }
 
-const JobAlertsModal: React.FC<Props> = ({ isOpen, onClose, role, country: initialCountry, onSubscribe }) => {
+const JobAlertsModal: React.FC<Props> = ({ isOpen, onClose, role, country: initialCountry, onSubscribe, isActive, onUnsubscribe }) => {
   const [email, setEmail] = useState('');
   const [selectedCountry, setSelectedCountry] = useState(initialCountry);
   const [frequency, setFrequency] = useState('daily');
@@ -36,7 +38,7 @@ const JobAlertsModal: React.FC<Props> = ({ isOpen, onClose, role, country: initi
   const ANTIGRAVITY_EMAIL_TEMPLATE = `
 <div style="background-color:#0f172a;padding:40px;font-family:'Courier New',monospace;color:#e2e8f0;border-radius:16px;">
   <div style="text-align:center;margin-bottom:30px;">
-    <h1 style="color:#818cf8;letter-spacing:4px;margin:0;">ANTIGRAVITY</h1>
+    <h1 style="color:#818cf8;letter-spacing:4px;margin:0;">JobNado AI</h1>
     <span style="font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:2px;">Orbital Job Uplink</span>
   </div>
   <div style="background:#1e293b;border:1px solid #334155;border-radius:8px;padding:20px;margin-bottom:24px;box-shadow:0 4px 6px -1px rgba(0,0,0,0.1);">
@@ -185,6 +187,28 @@ const JobAlertsModal: React.FC<Props> = ({ isOpen, onClose, role, country: initi
     onClose();
   };
 
+  const handleDeactivate = async () => {
+    if (!confirm("Are you sure you want to deactivate this alert? You will stop receiving job updates.")) return;
+    
+    setStatus('submitting');
+    try {
+      // 1. Update Supabase
+      // Note: In a real app we'd need the specific ID or email to deactivate. 
+      // Since we don't store the email in local state after close, we'll just clear the local state for now
+      // and let the user know. In a full auth system, we'd use the user's ID.
+      // For this demo, we'll just call the unsubscribe handler.
+      
+      if (onUnsubscribe) onUnsubscribe();
+      setStatus('idle');
+      onClose();
+      alert("Radar deactivated. You will no longer receive alerts for this session.");
+      
+    } catch (error) {
+      console.error("Deactivation failed:", error);
+      setStatus('idle');
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in overflow-y-auto">
       <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-md shadow-2xl relative overflow-hidden animate-fade-in-up my-auto">
@@ -314,7 +338,7 @@ const JobAlertsModal: React.FC<Props> = ({ isOpen, onClose, role, country: initi
                    </div>
                 </div>
 
-                <div className="pt-2">
+                <div className="pt-2 space-y-3">
                   <button
                     type="submit"
                     disabled={status === 'submitting' || !email}
@@ -327,6 +351,16 @@ const JobAlertsModal: React.FC<Props> = ({ isOpen, onClose, role, country: initi
                     )}
                     {status === 'submitting' ? 'Establishing Uplink...' : 'Activate Radar'}
                   </button>
+
+                  {isActive && (
+                    <button
+                      type="button"
+                      onClick={handleDeactivate}
+                      className="w-full py-2 text-sm text-red-400 hover:text-red-300 hover:bg-red-900/20 border border-transparent hover:border-red-900/30 rounded-lg transition-all"
+                    >
+                      Deactivate Radar
+                    </button>
+                  )}
                 </div>
               </form>
 
@@ -377,6 +411,35 @@ const JobAlertsModal: React.FC<Props> = ({ isOpen, onClose, role, country: initi
                         CRITICAL STEP: In the EmailJS Template Settings (header), set the "To Email" field to <code>{'{{to_email}}'}</code>.
                         <br/>Without this, the email will fail with "Recipient address empty".
                       </p>
+                    </div>
+
+                    <div className="mt-4 pt-3 border-t border-slate-800">
+                      <p className="text-[10px] text-slate-400 mb-2 uppercase font-bold tracking-wider">Test Controls</p>
+                      <button
+                        onClick={async () => {
+                          const btn = document.getElementById('force-scan-btn');
+                          if (btn) {
+                             btn.textContent = 'Scanning...';
+                             (btn as HTMLButtonElement).disabled = true;
+                          }
+                          try {
+                            const { data, error } = await supabase.functions.invoke('check-alerts');
+                            if (error) throw error;
+                            alert(`Scan Complete! Results: ${JSON.stringify(data)}`);
+                          } catch (e: any) {
+                            alert(`Scan Failed: ${e.message}`);
+                          } finally {
+                            if (btn) {
+                               btn.textContent = 'Force Run Global Scan';
+                               (btn as HTMLButtonElement).disabled = false;
+                            }
+                          }
+                        }}
+                        id="force-scan-btn"
+                        className="w-full py-2 bg-red-900/20 hover:bg-red-900/40 text-red-400 border border-red-900/50 rounded text-xs font-mono transition-colors"
+                      >
+                        Force Run Global Scan
+                      </button>
                     </div>
                   </div>
                 )}

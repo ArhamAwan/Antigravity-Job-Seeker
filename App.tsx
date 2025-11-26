@@ -10,6 +10,8 @@ import CoverLetterModal from './components/CoverLetterModal';
 import OnboardingTour from './components/OnboardingTour';
 import { Analytics } from "@vercel/analytics/react";
 import { Rocket, Sparkles, AlertTriangle, RefreshCcw, ArrowLeft, BellRing, CheckCircle } from 'lucide-react';
+import { HelmetProvider } from 'react-helmet-async';
+import SEO from './components/SEO';
 
 const App: React.FC = () => {
   const [phase, setPhase] = useState<AppPhase>(AppPhase.IDLE);
@@ -76,6 +78,11 @@ const App: React.FC = () => {
     localStorage.setItem('antigravity_alert_active', 'true');
   };
 
+  const handleUnsubscribe = () => {
+    setAlertActive(false);
+    localStorage.removeItem('antigravity_alert_active');
+  };
+
   const handlePrepMe = (job: JobOpportunity) => {
     setPrepJob(job);
   };
@@ -123,8 +130,13 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen relative overflow-x-hidden bg-[url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072&auto=format&fit=crop')] bg-cover bg-fixed bg-center">
-      {/* Dark Overlay */}
+    <HelmetProvider>
+      <div className="min-h-screen relative overflow-x-hidden bg-[url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072&auto=format&fit=crop')] bg-cover bg-fixed bg-center">
+        <SEO 
+          title={phase === AppPhase.RESULTS ? `Jobs for ${selectedRole || 'You'}` : undefined}
+          description={phase === AppPhase.RESULTS ? `Found ${opportunities.length} opportunities for ${selectedRole} in ${country}.` : undefined}
+        />
+        {/* Dark Overlay */}
       <div className="absolute inset-0 bg-slate-950/75 backdrop-blur-[1px]"></div>
       
       <Analytics />
@@ -235,8 +247,7 @@ const App: React.FC = () => {
                  </div>
                  <div className="flex gap-3">
                    <button 
-                     onClick={() => !alertActive && setIsAlertModalOpen(true)}
-                     disabled={alertActive}
+                     onClick={() => setIsAlertModalOpen(true)}
                       className={`tour-radar-btn px-4 py-2 border rounded-lg transition-all text-sm font-medium flex items-center gap-2
                         ${alertActive 
                           ? 'bg-green-500/10 border-green-500/30 text-green-400 cursor-default' 
@@ -289,6 +300,8 @@ const App: React.FC = () => {
           role={selectedRole || analysis?.suggestedRoles[0] || 'your profile'}
           country={country}
           onSubscribe={handleSubscribe}
+          isActive={alertActive}
+          onUnsubscribe={handleUnsubscribe}
         />
 
         {prepJob && analysis && (
@@ -309,7 +322,8 @@ const App: React.FC = () => {
           />
         )}
       </div>
-    </div>
+      </div>
+    </HelmetProvider>
   );
 };
 
