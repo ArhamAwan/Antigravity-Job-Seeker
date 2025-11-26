@@ -14,9 +14,22 @@ import { HelmetProvider } from 'react-helmet-async';
 import SEO from './components/SEO';
 
 const App: React.FC = () => {
-  const [phase, setPhase] = useState<AppPhase>(AppPhase.IDLE);
-  const [analysis, setAnalysis] = useState<CVAnalysis | null>(null);
-  const [opportunities, setOpportunities] = useState<JobOpportunity[]>([]);
+  // Initialize state from localStorage if available
+  const [phase, setPhase] = useState<AppPhase>(() => {
+    const saved = localStorage.getItem('antigravity_phase');
+    return saved ? (saved as AppPhase) : AppPhase.IDLE;
+  });
+  
+  const [analysis, setAnalysis] = useState<CVAnalysis | null>(() => {
+    const saved = localStorage.getItem('antigravity_analysis');
+    return saved ? JSON.parse(saved) : null;
+  });
+
+  const [opportunities, setOpportunities] = useState<JobOpportunity[]>(() => {
+    const saved = localStorage.getItem('antigravity_opportunities');
+    return saved ? JSON.parse(saved) : [];
+  });
+
   const [error, setError] = useState<string | null>(null);
   const [isAlertModalOpen, setIsAlertModalOpen] = useState(false);
   const [alertActive, setAlertActive] = useState(false);
@@ -24,10 +37,10 @@ const App: React.FC = () => {
   const [coverLetterJob, setCoverLetterJob] = useState<JobOpportunity | null>(null);
   
   // Lifted state to support "Back" navigation without data loss
-  const [cvText, setCvText] = useState('');
+  const [cvText, setCvText] = useState(() => localStorage.getItem('antigravity_cvText') || '');
   const [cvImage, setCvImage] = useState<{ mimeType: string, data: string } | null>(null);
-  const [country, setCountry] = useState<string>('United States');
-  const [selectedRole, setSelectedRole] = useState<string | null>(null);
+  const [country, setCountry] = useState<string>(() => localStorage.getItem('antigravity_country') || 'United States');
+  const [selectedRole, setSelectedRole] = useState<string | null>(() => localStorage.getItem('antigravity_selectedRole') || null);
 
   // Load alert state from local storage on mount
   useEffect(() => {
@@ -36,6 +49,75 @@ const App: React.FC = () => {
       setAlertActive(true);
     }
   }, []);
+
+  // Persist state changes
+  useEffect(() => {
+    localStorage.setItem('antigravity_phase', phase);
+    if (analysis) localStorage.setItem('antigravity_analysis', JSON.stringify(analysis));
+    if (opportunities.length > 0) localStorage.setItem('antigravity_opportunities', JSON.stringify(opportunities));
+    localStorage.setItem('antigravity_cvText', cvText);
+    localStorage.setItem('antigravity_country', country);
+    if (selectedRole) localStorage.setItem('antigravity_selectedRole', selectedRole);
+  }, [phase, analysis, opportunities, cvText, country, selectedRole]);
+
+  // Sync URL with State on Mount (Fixes Refresh Issue)
+  useEffect(() => {
+    const hash = window.location.hash;
+    // If we have state but no hash, restore hash
+    if (!hash && phase === AppPhase.REVIEW_ANALYSIS) {
+      window.history.replaceState(null, '', '#analysis');
+    } else if (!hash && phase === AppPhase.RESULTS) {
+      window.history.replaceState(null, '', '#results');
+    }
+  }, []); // Run once on mount
+
+  // Handle Browser Back Button & URL Hash
+  useEffect(() => {
+    const handleNavigation = () => {
+      const hash = window.location.hash;
+      console.log("Navigation Event:", hash); // Debugging
+
+      if (hash === '#results' && opportunities.length > 0) {
+        setPhase(AppPhase.RESULTS);
+      } else if (hash === '#analysis' && analysis) {
+        setPhase(AppPhase.REVIEW_ANALYSIS);
+      } else {
+        // Only go to IDLE if we are not in a transient state like ANALYZING or SEARCHING
+        // and if the hash is truly empty
+        if (hash === '' || hash === '#') {
+           setPhase(AppPhase.IDLE);
+        }
+      }
+    };
+
+    window.addEventListener('popstate', handleNavigation);
+    window.addEventListener('hashchange', handleNavigation); // Also listen for hash changes
+    
+    return () => {
+      window.removeEventListener('popstate', handleNavigation);
+      window.removeEventListener('hashchange', handleNavigation);
+    };
+  }, [analysis, opportunities]);
+
+  // Helper to push history state
+  const navigateToPhase = (newPhase: AppPhase) => {
+    setPhase(newPhase);
+    let hash = '';
+    if (newPhase === AppPhase.REVIEW_ANALYSIS) hash = 'analysis';
+    if (newPhase === AppPhase.RESULTS) hash = 'results';
+    
+    // Use location.hash to ensure history entry is created
+    if (hash) {
+      if (window.location.hash !== `#${hash}`) {
+        window.location.hash = hash;
+      }
+    } else {
+      // For IDLE, remove hash
+      if (window.location.hash) {
+        history.pushState(null, '', window.location.pathname);
+      }
+    }
+  };
 
   const handleAnalysis = async () => {
     // Ensure country has a default
@@ -48,7 +130,7 @@ const App: React.FC = () => {
       const input = cvImage ? cvImage : cvText;
       const result = await analyzeCV(input);
       setAnalysis(result);
-      setPhase(AppPhase.REVIEW_ANALYSIS);
+      navigateToPhase(AppPhase.REVIEW_ANALYSIS);
     } catch (err) {
       console.error(err);
       setError("Failed to decode CV. Please ensure the text is readable and try again.");
@@ -65,7 +147,7 @@ const App: React.FC = () => {
     try {
       const results = await searchOpportunities(analysis, country, roleToSearch);
       setOpportunities(results);
-      setPhase(AppPhase.RESULTS);
+      navigateToPhase(AppPhase.RESULTS);
     } catch (err) {
       console.error(err);
       setError("Connection to job sector lost. Retrying orbital scan recommended.");
@@ -93,27 +175,7 @@ const App: React.FC = () => {
 
   // Handles internal navigation backwards through the phases
   const handleBack = () => {
-    setError(null);
-    switch (phase) {
-      case AppPhase.ANALYZING:
-        setPhase(AppPhase.IDLE);
-        break;
-      case AppPhase.REVIEW_ANALYSIS:
-        setPhase(AppPhase.IDLE);
-        break;
-      case AppPhase.SEARCHING:
-        setPhase(AppPhase.REVIEW_ANALYSIS);
-        break;
-      case AppPhase.RESULTS:
-        setPhase(AppPhase.REVIEW_ANALYSIS);
-        break;
-      case AppPhase.ERROR:
-        if (analysis) setPhase(AppPhase.REVIEW_ANALYSIS);
-        else setPhase(AppPhase.IDLE);
-        break;
-      default:
-        break;
-    }
+    window.history.back();
   };
 
   const reset = () => {
@@ -127,6 +189,17 @@ const App: React.FC = () => {
     setPrepJob(null);
     setCoverLetterJob(null);
     setSelectedRole(null);
+    
+    // Clear storage
+    localStorage.removeItem('antigravity_phase');
+    localStorage.removeItem('antigravity_analysis');
+    localStorage.removeItem('antigravity_opportunities');
+    localStorage.removeItem('antigravity_cvText');
+    localStorage.removeItem('antigravity_country');
+    localStorage.removeItem('antigravity_selectedRole');
+    
+    // Reset URL
+    window.history.pushState(null, '', window.location.pathname);
   };
 
   return (
