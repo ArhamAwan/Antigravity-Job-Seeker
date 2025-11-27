@@ -16,7 +16,7 @@ const SEO: React.FC<SEOProps> = ({
   name = 'JobNado AI', 
   type = 'website',
   image = 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072&auto=format&fit=crop',
-  url = 'https://jobnado.ai'
+  url = 'https://www.jobnadoai.xyz'
 }) => {
   const siteTitle = title ? `${title} | ${name}` : name;
   const metaDescription = description || "JobNado AI: The antigravity career engine. Decode your CV, find hidden opportunities, and launch your career into orbit.";
