@@ -1,0 +1,21 @@
+{
+  "name": "JobNado AI",
+  "short_name": "JobNado",
+  "description": "The antigravity career engine. Decode your CV, find hidden opportunities, and launch your career into orbit.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "icons": [
+    {
+      "src": "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=192&auto=format&fit=crop",
+      "sizes": "192x192",
+      "type": "image/jpeg"
+    },
+    {
+      "src": "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=512&auto=format&fit=crop",
+      "sizes": "512x512",
+      "type": "image/jpeg"
+    }
+  ]
+}
