@@ -3,6 +3,7 @@ import { Bell, X, Check, Mail, Radio, Loader2, AlertTriangle, Code, Copy, Chevro
 import { generateAlertConfirmation } from '../services/geminiService';
 import { supabase } from '../services/supabaseClient';
 import { COUNTRIES } from '../constants/countries';
+import { trackConversion } from '../services/analytics';
 
 interface Props {
   isOpen: boolean;
@@ -166,6 +167,7 @@ const JobAlertsModal: React.FC<Props> = ({ isOpen, onClose, role, country: initi
       
       // 4. Persist state in parent
       onSubscribe();
+      trackConversion();
       setStatus('success');
     } catch (error: any) {
       console.error("Alert setup failed:", error);

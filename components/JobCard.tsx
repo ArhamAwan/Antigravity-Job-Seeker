@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { JobOpportunity, CVAnalysis } from '../types';
 import { ArrowUpRight, Building2, BrainCircuit, AlertCircle, MessageSquare, Copy, Check, Loader2, Mic, FileText, ExternalLink } from 'lucide-react';
 import { generateOutreach } from '../services/geminiService';
+import { trackConversion } from '../services/analytics';
 
 interface Props {
   job: JobOpportunity;
@@ -140,6 +141,7 @@ const JobCard: React.FC<Props> = ({ job, analysis, onPrepMe, onCoverLetter }) =>
             href={job.applicationUrl} 
             target="_blank" 
             rel="noopener noreferrer"
+            onClick={trackConversion}
             className="flex items-center justify-center justify-between px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-colors group/btn shadow-[0_0_15px_rgba(79,70,229,0.3)] w-full"
           >
             <span className="text-sm font-medium">Apply Now</span>
