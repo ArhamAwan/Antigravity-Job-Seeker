@@ -465,5 +465,56 @@ export const generateCoverLetter = async (
 
 /**
  * Feature: Salary Estimator
- * Estimates salary range for a specific role and location.
+/**
+ * Feature: AI Chat Assistant
+ * Handles conversational queries about the app or career advice.
  */
+export const chatWithAI = async (
+  history: { role: 'user' | 'model', parts: string }[],
+  message: string
+): Promise<string> => {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+
+  const systemPrompt = `
+    You are "JobNado", the AI assistant for the JobNado AI application.
+    
+    Your Purpose:
+    - Help users navigate the app (CV Analysis, Job Search, Interview Prep).
+    - Provide quick career advice and tips.
+    - Explain how the "Antigravity" engine works (it parses CVs, finds hidden roles, and searches live job listings).
+    
+    Tone:
+    - Helpful, futuristic, professional, yet friendly.
+    - Keep answers concise (max 3-4 sentences unless asked for more).
+    
+    Context:
+    - The user is currently on the JobNado AI website.
+  `;
+
+  // Construct the conversation history for the API
+  // Note: @google/genai expects 'user' or 'model' roles.
+  const contents = [
+    { role: 'user', parts: [{ text: systemPrompt }] },
+    { role: 'model', parts: [{ text: "Understood. I am JobNado, ready to assist." }] },
+    ...history.map(h => ({
+      role: h.role,
+      parts: [{ text: h.parts }]
+    })),
+    { role: 'user', parts: [{ text: message }] }
+  ];
+
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: contents,
+      config: {
+        temperature: 0.7,
+      }
+    });
+
+    return response.text || "I received your message but couldn't generate a response.";
+  } catch (e) {
+    console.error("Chat failed", e);
+    return "I'm having trouble connecting to the neural network right now. Please try again later.";
+  }
+};

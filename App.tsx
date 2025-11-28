@@ -12,6 +12,7 @@ import { Analytics } from "@vercel/analytics/react";
 import { Rocket, Sparkles, AlertTriangle, RefreshCcw, ArrowLeft, BellRing, CheckCircle } from 'lucide-react';
 import { HelmetProvider } from 'react-helmet-async';
 import SEO from './components/SEO';
+import ChatWidget from './components/ChatWidget';
 
 const App: React.FC = () => {
   // Initialize state from localStorage if available
@@ -394,6 +395,8 @@ const App: React.FC = () => {
             analysis={analysis}
           />
         )}
+        
+        <ChatWidget />
       </div>
       </div>
     </HelmetProvider>
